@@ -72,6 +72,10 @@ namespace paramore.brighter.commandprocessor.messaginggateway.rmq
         /// </summary>
         public const string ORIGINAL_MESSAGE_ID = Message.OriginalMessageIdHeaderName;
         /// <summary>
+        /// Dictates seconds a re-queued message can live for before exhaustion.
+        /// </summary>
+        public const string ORIGINAL_MESSAGE_TIMESTAMP = Message.OriginalMessageTimestampHeaderName;
+        /// <summary>
         /// Tag used to identify this message in the sequence against it's Id (used to perform multiple ack against Id upto Tag).
         /// </summary>
         public const string DELIVERY_TAG = Message.DeliveryTagHeaderName;

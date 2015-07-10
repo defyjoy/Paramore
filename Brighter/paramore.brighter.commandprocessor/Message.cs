@@ -46,6 +46,7 @@ namespace paramore.brighter.commandprocessor
     public class Message : IEquatable<Message>
     {
         public const string OriginalMessageIdHeaderName = "x-original-message-id";
+        public const string OriginalMessageTimestampHeaderName = "x-original-message-timestamp";
         public const string DeliveryTagHeaderName = "DeliveryTag";
 
         /// <summary>
@@ -151,6 +152,7 @@ namespace paramore.brighter.commandprocessor
         {
             Header.UpdateHandledCount();
         }
+
         public bool HandledCountReached(int requeueCount)
         {
             return Header.HandledCount >= requeueCount;

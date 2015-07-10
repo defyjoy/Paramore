@@ -77,6 +77,10 @@ namespace paramore.brighter.serviceactivator
         /// </summary>
         public int RequeueDelayInMilliseconds { get; set; }
         /// <summary>
+        /// Gets or sets number of seconds a re-queued message can live before exhaustion.
+        /// </summary>
+        public int RequeueTTLSeconds { get; set; }
+        /// <summary>
         /// Gets or Sets the unacceptable message limit, once the limit is reached the 
         /// </summary>
         public int UnacceptableMessageLimit { get; set; }
@@ -313,18 +317,20 @@ namespace paramore.brighter.serviceactivator
 
             if (DiscardRequeuedMessagesEnabled())
             {
-                if (message.HandledCountReached(RequeueCount))
+                if (message.HandledCountReached(RequeueCount) || RequeueTTLReached(message, RequeueTTLSeconds))
                 {
                     var originalMessageId = message.Header.Bag.ContainsKey(Message.OriginalMessageIdHeaderName) ? message.Header.Bag[Message.OriginalMessageIdHeaderName].ToString() : null;
+                    var originalMessageTimestamp = message.Header.Bag.ContainsKey(Message.OriginalMessageTimestampHeaderName) ? message.Header.Bag[Message.OriginalMessageTimestampHeaderName].ToString() : null;
 
                     if (Logger != null) 
                         Logger.WarnFormat(
-                            "MessagePump: Have tried {2} times to handle this message {0}{4} from {3} on thread # {1}, dropping message", 
+                            "MessagePump: Have tried {2} times {5}to handle this message {0}{4} from {3} on thread # {1}, dropping message", 
                             message.Id, 
                             Thread.CurrentThread.ManagedThreadId, 
                             RequeueCount, 
                             Channel.Name,
-                            string.IsNullOrEmpty(originalMessageId) ? string.Empty : string.Format(" (original message id {0})", originalMessageId));
+                            string.IsNullOrEmpty(originalMessageId) ? string.Empty : string.Format(" (original message id {0})", originalMessageId),
+                            RequeueTTLSeconds >= 0 ? string.Format("(since {0})", originalMessageTimestamp) : string.Empty);
 
                     AcknowledgeMessage(message);
                     return;
@@ -334,6 +340,27 @@ namespace paramore.brighter.serviceactivator
             if (Logger != null) Logger.DebugFormat("MessagePump: Re-queueing message {0} from {2} on thread # {1}", message.Id, Thread.CurrentThread.ManagedThreadId, Channel.Name);
 
             Channel.Requeue(message, RequeueDelayInMilliseconds);
+        }
+
+        private bool RequeueTTLReached(Message message, int RequeueTTLSeconds)
+        {
+            var originalMessageTimestampString = message.Header.Bag.ContainsKey(Message.OriginalMessageTimestampHeaderName) ? message.Header.Bag[Message.OriginalMessageTimestampHeaderName].ToString() : null;
+
+            if (String.IsNullOrWhiteSpace(originalMessageTimestampString))
+            {
+                return false;
+            }
+
+            DateTime originalMessageTimestamp;
+
+            if (!DateTime.TryParse(originalMessageTimestampString, out originalMessageTimestamp))
+            {
+                Logger.WarnFormat("Unable to parse {0} on messsage id {1}", Message.OriginalMessageTimestampHeaderName, message.Id);
+
+                return false;
+            }
+
+            return (DateTime.UtcNow.Subtract(originalMessageTimestamp).TotalSeconds > RequeueTTLSeconds);
         }
 
         private TRequest TranslateMessage(Message message)

@@ -42,6 +42,8 @@ namespace paramore.brighter.commandprocessor.messaginggateway.rmq
     {
         private static string[] HeadersToReset = { HeaderNames.DELAY_MILLISECONDS, HeaderNames.MESSAGE_TYPE, HeaderNames.TOPIC, HeaderNames.HANDLED_COUNT, HeaderNames.DELIVERY_TAG };
 
+        public static Func<DateTime, string> GetISO8601Timestamp = (dateTime) => dateTime.ToString("yyyy-MM-ddTHH:mm:ssZ");
+
         private readonly IModel _channel;
         private readonly string _exchangeName;
         private readonly ILog _logger;
@@ -141,7 +143,10 @@ namespace paramore.brighter.commandprocessor.messaginggateway.rmq
                 headers.Add(HeaderNames.DELAY_MILLISECONDS, delayMilliseconds);
 
             if (!message.Header.Bag.Any(h => h.Key.Equals(HeaderNames.ORIGINAL_MESSAGE_ID, StringComparison.CurrentCultureIgnoreCase)))
+            { 
                 headers.Add(HeaderNames.ORIGINAL_MESSAGE_ID, message.Id.ToString());
+                headers.Add(HeaderNames.ORIGINAL_MESSAGE_TIMESTAMP, GetISO8601Timestamp(DateTime.UtcNow));
+            }
 
             // To send it to the right queue use the default (empty) exchange
             _channel.BasicPublish(

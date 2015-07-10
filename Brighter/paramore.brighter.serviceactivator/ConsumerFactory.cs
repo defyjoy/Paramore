@@ -52,6 +52,7 @@ namespace paramore.brighter.serviceactivator
                 TimeoutInMilliseconds = _connection.TimeoutInMiliseconds,
                 RequeueCount = _connection.RequeueCount,
                 RequeueDelayInMilliseconds = _connection.RequeueDelayInMilliseconds,
+                RequeueTTLSeconds = _connection.RequeueTTLSeconds,
                 UnacceptableMessageLimit = _connection.UnacceptableMessageLimit,
                 Logger = _logger
             };

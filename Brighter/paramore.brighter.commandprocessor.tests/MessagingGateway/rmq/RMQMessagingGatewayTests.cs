@@ -73,6 +73,8 @@ namespace paramore.commandprocessor.tests.MessagingGateway.rmq
         private It _should_send_a_message_via_rmq_with_the_matching_body = () => s_messageBody.ShouldEqual(s_message.Body.Value);
         private It _should_send_a_message_via_rmq_without_delay_header = () => s_messageHeaders.Keys.ShouldNotContain(HeaderNames.DELAY_MILLISECONDS);
         private It _should_received_a_message_via_rmq_without_delayed_header = () => s_messageHeaders.Keys.ShouldNotContain(HeaderNames.DELAYED_MILLISECONDS);
+        private It should_send_a_message_via_rmq_without_original_id_header = () => s_messageHeaders.Keys.ShouldNotContain(HeaderNames.ORIGINAL_MESSAGE_ID);
+        private It should_send_a_message_via_rmq_without_original_timestamp_header = () => s_messageHeaders.Keys.ShouldNotContain(HeaderNames.ORIGINAL_MESSAGE_TIMESTAMP);
 
         private Cleanup _tearDown = () =>
         {
@@ -93,6 +95,8 @@ namespace paramore.commandprocessor.tests.MessagingGateway.rmq
         private static string s_messageBody;
         private static bool s_immediateReadIsNull;
         private static IDictionary<string, object> s_messageHeaders;
+        private static string s_originalMessageId;
+        private static string s_originalMessageTimestampString;
 
         private Establish _context = () =>
         {
@@ -102,9 +106,15 @@ namespace paramore.commandprocessor.tests.MessagingGateway.rmq
 
                 var s_header = new MessageHeader(Guid.NewGuid(), "test3", MessageType.MT_COMMAND);
                 var s_originalMessage = new Message(header: s_header, body: new MessageBody("test3 content"));
+                var s_originalMessageTimestamp = DateTime.UtcNow;
+
+                s_originalMessageId = s_originalMessage.Id.ToString();
+                s_originalMessageTimestampString = RmqMessagePublisher.GetISO8601Timestamp(s_originalMessageTimestamp);
 
                 var s_mutatedHeader = new MessageHeader(s_header.Id, "test3", MessageType.MT_COMMAND);
                 s_mutatedHeader.Bag.Add(HeaderNames.DELAY_MILLISECONDS, 1000);
+                s_mutatedHeader.Bag.Add(HeaderNames.ORIGINAL_MESSAGE_ID, s_originalMessageId);
+                s_mutatedHeader.Bag.Add(HeaderNames.ORIGINAL_MESSAGE_TIMESTAMP, s_originalMessageTimestampString);
                 s_message = new Message(header: s_mutatedHeader, body: s_originalMessage.Body);
 
                 s_messageProducer = new RmqMessageProducer(logger);
@@ -131,6 +141,10 @@ namespace paramore.commandprocessor.tests.MessagingGateway.rmq
         private It _should_send_a_message_via_rmq_with_the_matching_body = () => s_messageBody.ShouldEqual(s_message.Body.Value);
         private It _should_send_a_message_via_rmq_with_delay_header = () => s_messageHeaders.Keys.ShouldContain(HeaderNames.DELAY_MILLISECONDS);
         private It _should_received_a_message_via_rmq_with_delayed_header = () => s_messageHeaders.Keys.ShouldContain(HeaderNames.DELAYED_MILLISECONDS);
+        private It should_send_a_message_via_rmq_with_original_id_header = () => s_messageHeaders.Keys.ShouldContain(HeaderNames.ORIGINAL_MESSAGE_ID);
+        private It should_send_a_message_via_rmq_with_original_timestamp_header = () => s_messageHeaders.Keys.ShouldContain(HeaderNames.ORIGINAL_MESSAGE_TIMESTAMP);
+        private It should_send_a_message_via_rmq_with_correct_original_id_header = () => s_messageHeaders[HeaderNames.ORIGINAL_MESSAGE_ID].ShouldEqual(Encoding.UTF8.GetBytes(s_originalMessageId));
+        private It should_send_a_message_via_rmq_with_correct_original_timestamp_header = () => s_messageHeaders[HeaderNames.ORIGINAL_MESSAGE_TIMESTAMP].ShouldEqual(Encoding.UTF8.GetBytes(s_originalMessageTimestampString));
 
         private Cleanup _tearDown = () =>
         {

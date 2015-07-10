@@ -97,6 +97,10 @@ namespace paramore.brighter.serviceactivator
         /// </summary>
         public int RequeueDelayInMilliseconds { get; private set; }
         /// <summary>
+        /// Gets or sets number of seconds a re-queued message can live before exhaustion.
+        /// </summary>
+        public int RequeueTTLSeconds { get; private set; }
+        /// <summary>
         /// Gets the unacceptable messages limit
         /// </summary>
         public int UnacceptableMessageLimit { get; private set; }
@@ -115,7 +119,7 @@ namespace paramore.brighter.serviceactivator
         /// <param name="unacceptableMessageLimit">The number of unacceptable messages to handle, before stopping reading from the channel</param>
         /// <param name="channelName">The channel name</param>
         /// <param name="isDurable">The durability of the queue</param>
-        public Connection(ConnectionName name, IAmAChannelFactory channelFactory, Type dataType, ChannelName channelName, string routingKey, int noOfPerformers = 1, int timeoutInMilliseconds = 300, int requeueCount = -1, int requeueDelayInMilliseconds = 0, int unacceptableMessageLimit = 0, bool isDurable = false)
+        public Connection(ConnectionName name, IAmAChannelFactory channelFactory, Type dataType, ChannelName channelName, string routingKey, int noOfPerformers = 1, int timeoutInMilliseconds = 300, int requeueCount = -1, int requeueDelayInMilliseconds = 0, int requeueTTLSeconds = -1, int unacceptableMessageLimit = 0, bool isDurable = false)
         {
             RequeueCount = requeueCount;
             Name = name;
