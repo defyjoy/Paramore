@@ -119,7 +119,7 @@ namespace paramore.brighter.serviceactivator
         /// <param name="unacceptableMessageLimit">The number of unacceptable messages to handle, before stopping reading from the channel</param>
         /// <param name="channelName">The channel name</param>
         /// <param name="isDurable">The durability of the queue</param>
-        public Connection(ConnectionName name, IAmAChannelFactory channelFactory, Type dataType, ChannelName channelName, string routingKey, int noOfPerformers = 1, int timeoutInMilliseconds = 300, int requeueCount = -1, int requeueDelayInMilliseconds = 0, int requeueTTLSeconds = -1, int unacceptableMessageLimit = 0, bool isDurable = false)
+        public Connection(ConnectionName name, IAmAChannelFactory channelFactory, Type dataType, ChannelName channelName, string routingKey, int noOfPerformers = 1, int timeoutInMilliseconds = 300, int requeueCount = -1, int requeueDelayInMilliseconds = 0, int requeueTTLSeconds = 0, int unacceptableMessageLimit = 0, bool isDurable = false)
         {
             RequeueCount = requeueCount;
             Name = name;
@@ -129,6 +129,7 @@ namespace paramore.brighter.serviceactivator
             TimeoutInMiliseconds = timeoutInMilliseconds;
             UnacceptableMessageLimit = unacceptableMessageLimit;
             RequeueDelayInMilliseconds = requeueDelayInMilliseconds;
+            RequeueTTLSeconds = requeueTTLSeconds;
             ChannelName = channelName;
             RoutingKey = routingKey;
             IsDurable = isDurable;

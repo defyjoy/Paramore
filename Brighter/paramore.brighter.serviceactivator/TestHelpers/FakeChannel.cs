@@ -22,8 +22,14 @@ THE SOFTWARE. */
 
 #endregion
 
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Threading.Tasks;
 using paramore.brighter.commandprocessor;
+using paramore.brighter.commandprocessor.extensions;
 
 namespace paramore.brighter.serviceactivator.TestHelpers
 {
@@ -78,7 +84,27 @@ namespace paramore.brighter.serviceactivator.TestHelpers
 
         public virtual void Requeue(Message message, int delayMilliseconds = 0)
         {
-            _messageQueue.Enqueue(message);
+            if (delayMilliseconds > 0)
+                Task.Delay(delayMilliseconds).Wait();
+
+            var header = new MessageHeader(message.Header.Id, message.Header.Topic, message.Header.MessageType,
+                message.Header.TimeStamp);
+
+            message.Header.Bag.Each(item =>
+            {
+                header.Bag.Add(item.Key, item.Value);
+            });
+
+            if (!message.Header.Bag.Any(h => h.Key.Equals(Message.OriginalMessageIdHeaderName, StringComparison.CurrentCultureIgnoreCase)))
+            {
+                header.Bag.Add(Message.OriginalMessageIdHeaderName, message.Id.ToString());
+                header.Bag.Add(Message.OriginalMessageTimestampHeaderName, message.Header.TimeStamp.ToString("yyyy-MM-ddTHH:mm:ssZ"));
+            }
+
+            while (header.HandledCount < message.Header.HandledCount)
+                header.UpdateHandledCount();
+
+            _messageQueue.Enqueue(new Message(header, message.Body));
         }
 
         public virtual void Send(Message message, int millisecondsDelay = 0)

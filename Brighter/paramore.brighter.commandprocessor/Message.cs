@@ -155,7 +155,7 @@ namespace paramore.brighter.commandprocessor
 
         public bool HandledCountReached(int requeueCount)
         {
-            return Header.HandledCount >= requeueCount;
+            return requeueCount > -1 && Header.HandledCount >= requeueCount;
         }
 
         public ulong GetDeliveryTag()

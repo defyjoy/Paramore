@@ -145,7 +145,7 @@ namespace paramore.brighter.commandprocessor.messaginggateway.rmq
             if (!message.Header.Bag.Any(h => h.Key.Equals(HeaderNames.ORIGINAL_MESSAGE_ID, StringComparison.CurrentCultureIgnoreCase)))
             { 
                 headers.Add(HeaderNames.ORIGINAL_MESSAGE_ID, message.Id.ToString());
-                headers.Add(HeaderNames.ORIGINAL_MESSAGE_TIMESTAMP, GetISO8601Timestamp(DateTime.UtcNow));
+                headers.Add(HeaderNames.ORIGINAL_MESSAGE_TIMESTAMP, GetISO8601Timestamp(message.Header.TimeStamp));
             }
 
             // To send it to the right queue use the default (empty) exchange

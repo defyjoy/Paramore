@@ -167,6 +167,40 @@ namespace paramore.commandprocessor.tests.MessageDispatch
         private It _should_dispose_the_input_channel = () => s_channel.DisposeHappened.ShouldBeTrue();
     }
 
+    public class When_a_requeue_ttl_has_been_expired
+    {
+        private static IAmAMessagePump s_messagePump;
+        private static FakeChannel s_channel;
+        private static SpyRequeueCommandProcessor s_commandProcessor;
+        private static MyEvent s_event;
+
+        private Establish _context = () =>
+        {
+            s_commandProcessor = new SpyRequeueCommandProcessor();
+            s_channel = new FakeChannel();
+            var mapper = new MyEventMessageMapper();
+            s_messagePump = new MessagePump<MyEvent>(s_commandProcessor, mapper) { Channel = s_channel, TimeoutInMilliseconds = 5000, RequeueDelayInMilliseconds = 500, RequeueCount = -1, RequeueTTLSeconds = 1 };
+
+            var message1 = new Message(new MessageHeader(Guid.NewGuid(), "MyTopic", MessageType.MT_COMMAND), new MessageBody(JsonConvert.SerializeObject(s_event)));
+            s_channel.Send(message1);
+        };
+
+        private Because _of = () =>
+        {
+            var task = Task.Factory.StartNew(() => s_messagePump.Run(), TaskCreationOptions.LongRunning);
+            Task.Delay(2000).Wait();
+
+            var quitMessage = new Message(new MessageHeader(Guid.Empty, "", MessageType.MT_QUIT), new MessageBody(""));
+            s_channel.Send(quitMessage);
+
+            Task.WaitAll(new[] { task });
+        };
+
+        private It _should_send_the_message_via_the_command_processor = () => s_commandProcessor.SendHappened.ShouldBeTrue();
+        private It _should_have_been_handled_2_times_via_send = () => s_commandProcessor.SendCount.ShouldEqual(2);
+        private It _should_requeue_the_messages = () => s_channel.Length.ShouldEqual(0);
+        private It _should_dispose_the_input_channel = () => s_channel.DisposeHappened.ShouldBeTrue();
+    }
 
     public class When_an_unacceptable_message_is_recieved
     {

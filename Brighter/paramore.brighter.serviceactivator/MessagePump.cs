@@ -281,7 +281,7 @@ namespace paramore.brighter.serviceactivator
 
         private bool DiscardRequeuedMessagesEnabled()
         {
-            return RequeueCount != -1;
+            return RequeueCount != -1 || RequeueTTLSeconds > 0;
         }
 
         private void DispatchRequest(MessageType messageType, TRequest request)
@@ -323,7 +323,7 @@ namespace paramore.brighter.serviceactivator
                     var originalMessageTimestamp = message.Header.Bag.ContainsKey(Message.OriginalMessageTimestampHeaderName) ? message.Header.Bag[Message.OriginalMessageTimestampHeaderName].ToString() : null;
 
                     if (Logger != null) 
-                        Logger.WarnFormat(
+                        Logger.ErrorFormat(
                             "MessagePump: Have tried {2} times {5}to handle this message {0}{4} from {3} on thread # {1}, dropping message", 
                             message.Id, 
                             Thread.CurrentThread.ManagedThreadId, 
@@ -344,6 +344,9 @@ namespace paramore.brighter.serviceactivator
 
         private bool RequeueTTLReached(Message message, int RequeueTTLSeconds)
         {
+            if (RequeueTTLSeconds <= 0)
+                return false;
+
             var originalMessageTimestampString = message.Header.Bag.ContainsKey(Message.OriginalMessageTimestampHeaderName) ? message.Header.Bag[Message.OriginalMessageTimestampHeaderName].ToString() : null;
 
             if (String.IsNullOrWhiteSpace(originalMessageTimestampString))
@@ -360,7 +363,7 @@ namespace paramore.brighter.serviceactivator
                 return false;
             }
 
-            return (DateTime.UtcNow.Subtract(originalMessageTimestamp).TotalSeconds > RequeueTTLSeconds);
+            return (DateTime.UtcNow.Subtract(originalMessageTimestamp.ToUniversalTime()).TotalSeconds > RequeueTTLSeconds);
         }
 
         private TRequest TranslateMessage(Message message)
